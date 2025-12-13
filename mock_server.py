@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from uuid import uuid4
 import random
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Dashboard API - Telemetry Service Mock")
 
@@ -164,3 +165,10 @@ def get_alerts(
 # Run with:
 # uvicorn mock_server:app --reload --port 8000
 # -------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
