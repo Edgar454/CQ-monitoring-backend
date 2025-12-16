@@ -43,7 +43,7 @@ def get_tests(
             "duration_sec": 2700,
             "return": round(random.uniform(-0.1, 0.1), 4),
             "link_status": "OK",
-            "state": state if 
+            "state": state.upper() if 
                      state is not None and state.upper() in VALID_STATES
                      else random.choice(VALID_STATES)
         }
@@ -127,7 +127,7 @@ def get_performance(
             "latency_ms_p95": random.randint(50, 200),
             "cpu_usage": round(random.uniform(0, 1), 2),
             "memory_usage_mb": random.randint(1000, 4000),
-            "status": status if 
+            "status": status.upper() if 
                     status is not None and status.upper() in VALID_STATUS 
                     else random.choice(VALID_STATUS),
             "errors": random.randint(0, 5)
@@ -160,7 +160,7 @@ def get_alerts(
             "metric": "latency_ms_p95",
             "value": random.randint(150, 300),
             "threshold": 150,
-            "status": status 
+            "status": status.upper() 
                 if status is not None and status.upper() in VALID_STATUS 
                 else random.choice(VALID_STATUS)
         }
