@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query , HTTPException
 from typing import Optional, List
 from datetime import datetime, timedelta
 from uuid import uuid4
@@ -10,6 +10,26 @@ app = FastAPI(title="Dashboard API - Telemetry Service Mock")
 # Helper to generate timestamps
 def now_iso():
     return datetime.utcnow().isoformat() + "Z"
+
+# Helper to validate a field 
+def validate_field(field , ALLOWED_FIELDS_LIST):
+    if field is not None:
+        if field.upper() not in ALLOWED_FIELDS_LIST:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid value. Allowed values: {sorted(ALLOWED_FIELDS_LIST)}",
+            )
+    else:
+        field = random.choice(tuple(ALLOWED_FIELDS_LIST))
+    return field.upper()
+
+MODULES = [
+    "ingestion_module",
+    "scoring_module",
+    "portfolio_building_module",
+    "execution_module",
+]
+     
 
 # -------------------------------
 # /api/health
@@ -43,9 +63,7 @@ def get_tests(
             "duration_sec": 2700,
             "return": round(random.uniform(-0.1, 0.1), 4),
             "link_status": "OK",
-            "state": state.upper() if 
-                     state is not None and state.upper() in VALID_STATES
-                     else random.choice(VALID_STATES)
+            "state": validate_field(state , VALID_STATES)
         }
         for _ in range(3)
     ]
@@ -120,16 +138,14 @@ def get_performance(
     data = [
         {
             "timestamp": (datetime.utcnow() - timedelta(minutes=i*5)).isoformat() + "Z",
-            "module": module or random.choice(["ingestion_module", "scoring_module", "portfolio_building_module","execution_module"]),
+            "module": validate_field(module,MODULES),
             "test_id": test_id or str(uuid4()),
             "host": host or f"node-{i%5+1:02d}",
             "throughput": random.randint(10000, 20000),
             "latency_ms_p95": random.randint(50, 200),
             "cpu_usage": round(random.uniform(0, 1), 2),
             "memory_usage_mb": random.randint(1000, 4000),
-            "status": status.upper() if 
-                    status is not None and status.upper() in VALID_STATUS 
-                    else random.choice(VALID_STATUS),
+            "status": validate_field(status,VALID_STATUS),
             "errors": random.randint(0, 5)
         }
         for i in range(min(limit, 10))
@@ -148,33 +164,31 @@ def get_alerts(
     date_to: Optional[str] = None,
     module: Optional[str] = None,
     test_id: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
 ):
     VALID_STATUS = {"CRITICAL", "HEALTHY", "WARNING"}
+    
+    
     data = [
         {
             "timestamp": (datetime.utcnow() - timedelta(minutes=i)).isoformat() + "Z",
-            "module": module or random.choice(["ingestion_module", "scoring_module", "portfolio_building_module","execution_module"]),
+            "module": validate_field(module , MODULES),
             "test_id": test_id or str(uuid4()),
-            "host": f"node-{i%5+1:02d}",
+            "host": f"node-{i % 5 + 1:02d}",
             "metric": "latency_ms_p95",
             "value": random.randint(150, 300),
             "threshold": 150,
-            "status": status.upper() 
-                if status is not None and status.upper() in VALID_STATUS 
-                else random.choice(VALID_STATUS)
+            "status": validate_field(status , VALID_STATUS),
         }
         for i in range(3)
     ]
+
     return {
         "meta": {"rows": len(data), "generated_at": now_iso()},
-        "data": data
+        "data": data,
     }
 
-# -------------------------------
-# Run with:
-# uvicorn mock_server:app --reload --port 8000
-# -------------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
